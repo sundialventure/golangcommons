@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"sundialventure.com/common/cfg"
+	"github.com/sundialventure/golangcommons/cfg"
 )
 
 var environments = map[string]string{

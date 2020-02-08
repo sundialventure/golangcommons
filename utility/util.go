@@ -6,21 +6,22 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
+	"log"
+	"math"
+	"time"
+
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/securecookie"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mssql"
 	_ "github.com/lib/pq"
+	"github.com/sundialventure/golangcommons/cfg"
+	"github.com/sundialventure/golangcommons/sys"
 	"github.com/xo/dburl"
 	"golang.org/x/crypto/bcrypt"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"io"
-	"log"
-	"math"
-	"sundialventure.com/common/cfg"
-	"sundialventure.com/common/sys"
-	"time"
 )
 
 //DB ...

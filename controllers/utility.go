@@ -3,9 +3,9 @@ package controllers
 import (
 	"fmt"
 
-	"sundialventure.com/common/models"
-	"sundialventure.com/common/sys"
-	"sundialventure.com/common/utility"
+	"github.com/sundialventure/golangcommons/models"
+	"github.com/sundialventure/golangcommons/sys"
+	"github.com/sundialventure/golangcommons/utility"
 
 	//entities "sundialventure.com/payschool/entities"
 

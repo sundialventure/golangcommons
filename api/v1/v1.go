@@ -8,11 +8,11 @@ import (
 	"net/http"
 	. "strconv"
 
-	"sundialventure.com/common/common/authentication"
-	"sundialventure.com/common/common/cfg"
-	"sundialventure.com/common/common/models"
-	"sundialventure.com/common/common/sys"
-	"sundialventure.com/common/common/utility"
+	"github.com/sundialventure/golangcommons/authentication"
+	"github.com/sundialventure/golangcommons/cfg"
+	"github.com/sundialventure/golangcommons/models"
+	"github.com/sundialventure/golangcommons/sys"
+	"github.com/sundialventure/golangcommons/utility"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pborman/uuid"

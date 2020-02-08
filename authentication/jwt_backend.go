@@ -13,8 +13,8 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	//"github.com/grafana/grafana/pkg/models"
 	"golang.org/x/crypto/bcrypt"
-	"sundialventure.com/common/redis"
-	settings "sundialventure.com/common/settings"
+	"github.com/sundialventure/golangcommons/redis"
+	settings "github.com/sundialventure/golangcommons/settings"
 )
 
 //JWTAuthenticationBackend ...

@@ -13,10 +13,10 @@ import (
 	//"github.com/grafana/grafana/pkg/models"
 
 	"golang.org/x/crypto/bcrypt"
-	cfg "sundialventure.com/common/cfg"
-	model "sundialventure.com/common/models"
-	redis "sundialventure.com/common/redis"
-	settings "sundialventure.com/common/settings"
+	cfg "github.com/sundialventure/golangcommons/cfg"
+	model "github.com/sundialventure/golangcommons/models"
+	redis "github.com/sundialventure/golangcommons/redis"
+	settings "github.com/sundialventure/golangcommons/settings"
 )
 
 //JWTAuthenticationBackend ...

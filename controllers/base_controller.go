@@ -1,14 +1,14 @@
 package controllers
 
 import (
-	models "sundialventure.com/common/models"
+	models "github.com/sundialventure/golangcommons/models"
 
 	"io/ioutil"
 	"strings"
 	"time"
 
-	"sundialventure.com/common/sys"
-	"sundialventure.com/common/utility"
+	"github.com/sundialventure/golangcommons/sys"
+	"github.com/sundialventure/golangcommons/utility"
 
 	"github.com/gin-gonic/gin"
 	log "gopkg.in/inconshreveable/log15.v2"

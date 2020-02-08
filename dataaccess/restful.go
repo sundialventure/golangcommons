@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	utility "sundialventure.com/common/utility"
+	utility "github.com/sundialventure/golangcommons/utility"
 	"github.com/parnurzeal/gorequest"
 	log "gopkg.in/inconshreveable/log15.v2"
 )
