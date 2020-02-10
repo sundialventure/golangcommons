@@ -13,8 +13,8 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/spf13/viper v1.6.2
-	github.com/sundialventure/golangcommons/cfg v0.0.0-20200208120309-df9fe961a577
-	github.com/sundialventure/golangcommons/sys v0.0.0-20200208120309-df9fe961a577
+	github.com/sundialventure/golangcommons/cfg v0.0.0-20200208221357-bf4b58debed4
+	github.com/sundialventure/golangcommons/sys v0.0.0-20200208221357-bf4b58debed4
 	github.com/xo/dburl v0.0.0-20200124232849-e9ec94f52bc3
 	golang.org/x/crypto v0.0.0-20200208060501-ecb85df21340
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20200109203555-b30bc20e4fd1
