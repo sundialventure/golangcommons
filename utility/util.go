@@ -353,3 +353,13 @@ func RandStr(strSize int, randType string) string {
 	}
 	return string(bytes)
 }
+
+//GenerateTransRef ... Generate transaction reference for each country
+func GenerateTransRef(countryid int) string {
+	time_now := time.Now()
+	transRef := fmt.Sprintf(time_now.Format("20060102150405"))
+	if countryid == 1 {
+		transRef = fmt.Sprintf(time_now.Format("20060102150405"))
+	}
+	return transRef
+}
