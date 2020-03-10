@@ -341,7 +341,9 @@ func RandStr(strSize int, randType string) string {
 	if randType == "alpha" {
 		dictionary = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	}
-
+	if randType == "all" {
+		dictionary = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	}
 	if randType == "number" {
 		dictionary = "0123456789"
 	}
