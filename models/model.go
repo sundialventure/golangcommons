@@ -15,13 +15,13 @@ type User struct {
 	Active              bool   `json:"active"`
 	UUID                string
 	UserGroup           UserGroup
-	UserGroupID         int64  `json:"user_group_id" sql:"type:bigint REFERENCES user_group(id)"`
-	Person              Person `json:"person"`
-	PersonID            *int64 `json:"person_id" sql:"type:bigint REFERENCES person(id)"`
-	LastPassword        string `json:"last_password"`
-	PasswordDuration    int64  `json:"password_duration"`
-	PasswordChangedLast *time  `json:"password_last_changed_at"`
-	PasswordType        string `json:"password_type"`
+	UserGroupID         int64      `json:"user_group_id" sql:"type:bigint REFERENCES user_group(id)"`
+	Person              Person     `json:"person"`
+	PersonID            *int64     `json:"person_id" sql:"type:bigint REFERENCES person(id)"`
+	LastPassword        string     `json:"last_password"`
+	PasswordDuration    int64      `json:"password_duration"`
+	PasswordChangedLast *time.Time `json:"password_last_changed_at"`
+	PasswordType        string     `json:"password_type"`
 }
 
 //TableName ...
