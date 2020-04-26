@@ -5,19 +5,23 @@ import "time"
 //User ...
 type User struct {
 	BaseModel
-	UserName          string `json:"user_name" gorm:"not null;unique"`
-	Salt              string `json:"salt"`
-	Provider          string `json:"provider"`
-	VerificationToken string `json:"verification_token"`
-	Email             string `json:"email" gorm:"not null;unique"`
-	Password          string `json:"password"`
-	PhoneNo           string `json:"phone_no"`
-	Active            bool   `json:"active"`
-	UUID              string
-	UserGroup         UserGroup
-	UserGroupID       int64  `json:"user_group_id" sql:"type:bigint REFERENCES user_group(id)"`
-	Person            Person `json:"person"`
-	PersonID          *int64 `json:"person_id" sql:"type:bigint REFERENCES person(id)"`
+	UserName            string `json:"user_name" gorm:"not null;unique"`
+	Salt                string `json:"salt"`
+	Provider            string `json:"provider"`
+	VerificationToken   string `json:"verification_token"`
+	Email               string `json:"email" gorm:"not null;unique"`
+	Password            string `json:"password"`
+	PhoneNo             string `json:"phone_no"`
+	Active              bool   `json:"active"`
+	UUID                string
+	UserGroup           UserGroup
+	UserGroupID         int64  `json:"user_group_id" sql:"type:bigint REFERENCES user_group(id)"`
+	Person              Person `json:"person"`
+	PersonID            *int64 `json:"person_id" sql:"type:bigint REFERENCES person(id)"`
+	LastPassword        string `json:"last_password"`
+	PasswordDuration    int64  `json:"password_duration"`
+	PasswordChangedLast *time  `json:"password_last_changed_at"`
+	PasswordType        string `json:"password_type"`
 }
 
 //TableName ...
