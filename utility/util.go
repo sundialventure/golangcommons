@@ -347,6 +347,9 @@ func RandStr(strSize int, randType string) string {
 	if randType == "number" {
 		dictionary = "0123456789"
 	}
+	if randType == "all" {
+		dictionary = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	}
 
 	var bytes = make([]byte, strSize)
 	rand.Read(bytes)
