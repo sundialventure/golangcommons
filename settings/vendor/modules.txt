@@ -1,2 +1,0 @@
-# github.com/sundialventure/golangcommons/cfg v0.0.0-20200208120309-df9fe961a577
-github.com/sundialventure/golangcommons/cfg

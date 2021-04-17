@@ -22,6 +22,7 @@ type User struct {
 	PasswordDuration    int64      `json:"password_duration"`
 	PasswordChangedLast *time.Time `json:"password_last_changed_at"`
 	PasswordType        string     `json:"password_type"`
+	Others              string     `json:"others"`
 }
 
 //TableName ...

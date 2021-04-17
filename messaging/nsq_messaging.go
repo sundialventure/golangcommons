@@ -11,8 +11,5 @@ func (h *MessageHandler) HandleMessage(m *nsq.Message) error {
 		return nil
 	}
 
-	err := processMessage(m.Body)
-
-	// Returning a non-nil error will automatically send a REQ command to NSQ to re-queue the message.
-	return err
+	return nil
 }
