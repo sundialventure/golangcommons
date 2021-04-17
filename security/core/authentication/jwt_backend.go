@@ -12,11 +12,11 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	//"github.com/grafana/grafana/pkg/models"
 
-	"golang.org/x/crypto/bcrypt"
 	cfg "github.com/sundialventure/golangcommons/cfg"
 	model "github.com/sundialventure/golangcommons/models"
 	redis "github.com/sundialventure/golangcommons/redis"
 	settings "github.com/sundialventure/golangcommons/settings"
+	"golang.org/x/crypto/bcrypt"
 )
 
 //JWTAuthenticationBackend ...
@@ -33,7 +33,7 @@ const (
 var authBackendInstance *JWTAuthenticationBackend = nil
 
 // InitJWTAuthenticationBackend ...
-func InitJWTAuthenticationBackend() *JWTAuthenticationBackend {
+func InitJWTAuthenticationBackend(keyMap map[string]interface{}) *JWTAuthenticationBackend {
 
 	if authBackendInstance == nil {
 		authBackendInstance = &JWTAuthenticationBackend{
