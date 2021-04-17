@@ -26,7 +26,6 @@ var RPT_SERVER_URL string = ""
 var ADCLUSTERPATH string = ""
 var SOVPATH string = ""
 var DB_PORT int64 = 5432
-
 var conf JsonCfg
 
 type JsonCfg struct {
