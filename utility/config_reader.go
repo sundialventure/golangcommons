@@ -17,6 +17,7 @@ type FileConfig struct {
 	FileName     string
 	FilePath     string
 	ConfigDetail map[string]interface{}
+	ConfigViper *viper.Viper
 }
 
 // InitConfig ...
@@ -30,5 +31,6 @@ func (fileConfig *FileConfig) InitConfig(configfilename string, configfilepath s
 		return err
 	}
 	fileConfig.ConfigDetail = viper.AllSettings()
+	fileConfig.ConfigViper = viper.GetViper()
 	return nil
 }

@@ -1,14 +1,16 @@
 package utility
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
+	log "gopkg.in/inconshreveable/log15.v2"
 	r "gopkg.in/rethinkdb/rethinkdb-go.v5"
-
-	log "github.com/inconshreveable/log15"
+	"gorm.io/driver/sqlserver"
+	"gorm.io/gorm"
 )
 
 // DataStore ...
@@ -195,7 +197,7 @@ func (datastore *DataStore) InitDataStore(storeType string, connDetails map[stri
 		if err != nil {
 			log.Crit("Got error when connect database, the error is '%v'", err)
 		}
-		datastore.RDBMS.DB.LogMode(true)
+
 		datastore.RDBMS = rdbms
 	}
 	return err
@@ -204,18 +206,22 @@ func (datastore *DataStore) InitDataStore(storeType string, connDetails map[stri
 // RDBMSImpl ... take care of RDBMS Datastore
 type RDBMSImpl struct {
 	DB *gorm.DB
+	Context context.Context
 }
 
 // Init ...
 func (rdbms *RDBMSImpl) Init(dbtype string, dbhost string, username string, password string, port int, dbname string, log log.Logger) error {
 	var err error
 	connString := fmt.Sprintf("user=%s port=%d password=%s dbname=%s sslmode=disable", username, port, password, dbname)
-	rdbms.DB, err = gorm.Open(dbtype, connString)
+	rdbms.DB, err = gorm.Open(sqlserver.New(sqlserver.Config{
+		DriverName: "my_sqlserver_driver",
+		DSN:        connString, //"gorm:gorm@tcp(localhost:9910)/gorm?charset=utf8&parseTime=True&loc=Local", // data source name, refer https://github.com/go-sql-driver/mysql#dsn-data-source-name
+	}))
 	if err != nil {
 		log.Crit("Got error when connect database, the error is '%v'", err)
 		return err
 	}
-	rdbms.DB.LogMode(true)
+
 	fmt.Println("Connected")
 	return nil
 }
@@ -223,7 +229,7 @@ func (rdbms *RDBMSImpl) Init(dbtype string, dbhost string, username string, pass
 //MigrateModels ...
 func (rdbms *RDBMSImpl) MigrateModels(values []interface{}) {
 	for _, model := range values {
-		rdbms.DB.CreateTable(model)
+		rdbms.DB.Migrator().CreateTable(model)
 	}
 }
 
@@ -298,7 +304,7 @@ func (rdbms *RDBMSImpl) UpdateDatabaseObject(dbobj interface{}, changeVal map[st
 //SearchAnyGenericObject ... This method search through with any map given to search a table
 func (rdbms *RDBMSImpl) SearchAnyGenericObject(queryDict map[string]interface{}, entity interface{}) (interface{}, int, error) {
 	query := rdbms.DB.Where(queryDict).Find(entity)
-	if query.RecordNotFound() {
+	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 		return entity, 1001, query.Error
 	} else if query.Error != nil {
 		return entity, 1002, query.Error
@@ -310,7 +316,7 @@ func (rdbms *RDBMSImpl) SearchAnyGenericObject(queryDict map[string]interface{},
 func (rdbms *RDBMSImpl) SearchAnyGenericObjectList(queryDict map[string]interface{}, entity interface{}, relatedent ...interface{}) (int, error) {
 	//entityArr := []interface{}{}
 	query := rdbms.DB.Where(queryDict).Find(entity)
-	if query.RecordNotFound() {
+	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 		return 1001, query.Error
 	} else if query.Error != nil {
 		return 1002, query.Error
@@ -322,7 +328,7 @@ func (rdbms *RDBMSImpl) SearchAnyGenericObjectList(queryDict map[string]interfac
 //SearchAnyGenericObjectOr ... This method search through with any map given to search a table
 func (rdbms *RDBMSImpl) SearchAnyGenericObjectOr(andQueryDict map[string]interface{}, orQueryDict map[string]interface{}, entity interface{}) (interface{}, int, error) {
 	query := rdbms.DB.Where(andQueryDict).Or(orQueryDict).Find(entity)
-	if query.RecordNotFound() {
+	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 		return entity, 1001, query.Error
 	} else if query.Error != nil {
 		return entity, 1002, query.Error
@@ -333,7 +339,7 @@ func (rdbms *RDBMSImpl) SearchAnyGenericObjectOr(andQueryDict map[string]interfa
 //FetchAllGenericObject ... This method search through with any map given to search a table
 func (rdbms *RDBMSImpl) FetchAllGenericObject(entity interface{}) (int, error) {
 	query := rdbms.DB.Find(entity)
-	if query.RecordNotFound() {
+	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 		return 1001, query.Error
 	} else if query.Error != nil {
 		return 1002, query.Error
@@ -344,7 +350,7 @@ func (rdbms *RDBMSImpl) FetchAllGenericObject(entity interface{}) (int, error) {
 //FetchAllGenericObjectWithParam ... This method search through with any map given to search a table
 func (rdbms *RDBMSImpl) FetchAllGenericObjectWithParam(queryDict map[string]interface{}, entity interface{}) (int, error) {
 	query := rdbms.DB.Where(queryDict).Find(entity)
-	if query.RecordNotFound() {
+	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 		return 1001, query.Error
 	} else if query.Error != nil {
 		return 1002, query.Error
@@ -355,7 +361,7 @@ func (rdbms *RDBMSImpl) FetchAllGenericObjectWithParam(queryDict map[string]inte
 //FetchFirstGenericObject ... This method search through with any map given to search a table
 func (rdbms *RDBMSImpl) FetchFirstGenericObject(queryDict map[string]interface{}, entity interface{}) (int, error) {
 	query := rdbms.DB.Where(queryDict).First(entity)
-	if query.RecordNotFound() {
+	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 		return 1001, query.Error
 	} else if query.Error != nil {
 		return 1002, query.Error
@@ -367,8 +373,8 @@ func (rdbms *RDBMSImpl) FetchFirstGenericObject(queryDict map[string]interface{}
 func (rdbms *RDBMSImpl) FetchRelatedObject(queryDict map[string]interface{}, entity interface{}, relatedEntity interface{}, foreignKeys string) (int, error) {
 
 	query := rdbms.DB.Where(queryDict).Find(entity)
-	rdbms.DB.Model(entity).Related(relatedEntity, foreignKeys)
-	if query.RecordNotFound() {
+	rdbms.DB.Model(entity).Association(foreignKeys)
+	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 		return 1001, query.Error
 	} else if query.Error != nil {
 		return 1002, query.Error

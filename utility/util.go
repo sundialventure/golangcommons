@@ -1,6 +1,7 @@
 package utility
 
 import (
+	"context"
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
@@ -9,19 +10,25 @@ import (
 	"io"
 	"log"
 	"math"
+	"os"
 	"time"
 
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/securecookie"
-	"github.com/jinzhu/gorm"
+	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlserver"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	//"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mssql"
 	_ "github.com/lib/pq"
 	"github.com/sundialventure/golangcommons/cfg"
 	"github.com/sundialventure/golangcommons/sys"
 	"github.com/xo/dburl"
 	"golang.org/x/crypto/bcrypt"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	//log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 //DB ...
@@ -38,33 +45,49 @@ var DataStoreObject *DataStore
 //Keebler ...
 var Keebler *securecookie.SecureCookie
 
+var newLogger logger.Interface
+
+
 //SetupDBNoEntities ... Setup DB without any entity
-func SetupDBNoEntities(config map[string]interface{}, dbtype string, log log15.Logger) {
+func SetupDBNoEntities(config map[string]interface{}, dbtype string) {
 	cfg.DB_SERVER = config["address"].(string)
 	cfg.DB_USER = config["userid"].(string)
 	cfg.DB_TYPE = config["dbtype"].(string)
 	cfg.DB_NAME = config["dbname"].(string)
 	cfg.DB_PASSWORD = config["password"].(string)
 	cfg.DB_PORT = int64(config["port"].(float64))
-	/*settings := "user=" + cfg.DB_USER + " password=" + cfg.DB_PASSWORD + " dbname=" + cfg.DB_NAME + " sslmode=disable"
-	db, err := sql.Open("postgres", settings)
-
-	PanicIf(err)
-	DB = db
-	err = DB.Ping()
-	if err != nil {
-		log.Fatalf("Error on opening database connection: %s", err.Error())
-	}
-	log.Printf("DB has been pinged")*/
+	newLogger = logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+		  SlowThreshold:              time.Second,   // Slow SQL threshold
+		  LogLevel:                   logger.Silent, // Log level
+		  IgnoreRecordNotFoundError: true,           // Ignore ErrRecordNotFound error for logger
+		  Colorful:                  false,          // Disable color
+		},
+	  )
+	
+	ctx := context.Background()
+	
 
 	if dbtype == "mssql" {
 		connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s", cfg.DB_SERVER, cfg.DB_USER, cfg.DB_PASSWORD, cfg.DB_PORT, cfg.DB_NAME)
-		conn, dberr = gorm.Open("mssql", connString) //sqlx.Open("mssql", connString)
+		//conn, dberr = gorm.Open("mssql", connString) //sqlx.Open("mssql", connString)
+		conn, dberr = gorm.Open(sqlserver.New(sqlserver.Config{
+			DriverName: "my_sqlserver_driver",
+			DSN:        connString, //"gorm:gorm@tcp(localhost:9910)/gorm?charset=utf8&parseTime=True&loc=Local", // data source name, refer https://github.com/go-sql-driver/mysql#dsn-data-source-name
+		}),&gorm.Config{
+			Logger: newLogger,
+		  })
 	}
 	if dbtype == "postgres" {
 		connString := fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", cfg.DB_USER, cfg.DB_PASSWORD, cfg.DB_SERVER, cfg.DB_PORT, cfg.DB_NAME) //host=%s userid=%s port=%d password=%s dbname=%s
-		fmt.Println(connString)
-		conn, dberr = gorm.Open("postgres", connString)
+		
+		conn, dberr = gorm.Open(postgres.New(postgres.Config{
+			DriverName: "my_postgres_driver",
+			DSN:        connString, //"gorm:gorm@tcp(localhost:9910)/gorm?charset=utf8&parseTime=True&loc=Local", // data source name, refer https://github.com/go-sql-driver/mysql#dsn-data-source-name
+		}), &gorm.Config{
+			Logger: newLogger,
+		  })
 	}
 
 	if dbtype == "oracle" {
@@ -77,37 +100,38 @@ func SetupDBNoEntities(config map[string]interface{}, dbtype string, log log15.L
 	DataStoreObject = &DataStore{}
 	DataStoreObject.StoreType = "rdbms"
 	if dbtype != "oracle" {
-		conn.LogMode(true)
-		DB.LogMode(true)
+		
 		DB = *conn
 
 		if dberr != nil {
-			log.Crit("Error on opening database connection: %s", dberr.Error())
+			newLogger.Error(ctx, "Error on opening database connection: %s", dberr.Error())
 			panic(dberr)
 		} else {
-			log.Info("DB has been pinged")
+			newLogger.Info(ctx, "DB has been pinged")
 		}
 
 	} else {
 		DBSql = oracleConn
 		dberr := DBSql.Ping()
 		if dberr != nil {
-			log.Crit("Error on opening database connection: %s", dberr.Error())
+			newLogger.Error(ctx, "Error on opening database connection: %s", dberr.Error())
 			panic(dberr)
 		} else {
-			log.Info("DB has been pinged")
+			newLogger.Info(ctx, "DB has been pinged")
 		}
 
 	}
 
-	DataStoreObject.RDBMS = RDBMSImpl{conn}
+	
+
+	DataStoreObject.RDBMS = RDBMSImpl{conn, ctx}
 
 	//PanicIf(dberr)
 
 }
 
 //SetupDB ...
-func SetupDB(config map[string]interface{}, entites []interface{}, dbtype string) {
+func SetupDB(ctx context.Context, config map[string]interface{}, entites []interface{}, dbtype string) {
 
 	cfg.DB_SERVER = config["address"].(string)
 	cfg.DB_USER = config["userid"].(string)
@@ -115,25 +139,36 @@ func SetupDB(config map[string]interface{}, entites []interface{}, dbtype string
 	cfg.DB_NAME = config["dbname"].(string)
 	cfg.DB_PASSWORD = config["password"].(string)
 	cfg.DB_PORT = int64(config["port"].(float64))
-	/*settings := "user=" + cfg.DB_USER + " password=" + cfg.DB_PASSWORD + " dbname=" + cfg.DB_NAME + " sslmode=disable"
-	db, err := sql.Open("postgres", settings)
+	
+	newLogger = logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+		  SlowThreshold:              time.Second,   // Slow SQL threshold
+		  LogLevel:                   logger.Silent, // Log level
+		  IgnoreRecordNotFoundError: true,           // Ignore ErrRecordNotFound error for logger
+		  Colorful:                  false,          // Disable color
+		},
+	  )
 
-	PanicIf(err)
-	DB = db
-	err = DB.Ping()
-	if err != nil {
-		log.Fatalf("Error on opening database connection: %s", err.Error())
-	}
-	log.Printf("DB has been pinged")*/
-
-	if cfg.DB_TYPE == "mssql" {
+	if dbtype == "mssql" {
 		connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s", cfg.DB_SERVER, cfg.DB_USER, cfg.DB_PASSWORD, cfg.DB_PORT, cfg.DB_NAME)
-		conn, dberr = gorm.Open("mssql", connString) //sqlx.Open("mssql", connString)
+		//conn, dberr = gorm.Open("mssql", connString) //sqlx.Open("mssql", connString)
+		conn, dberr = gorm.Open(sqlserver.New(sqlserver.Config{
+			DriverName: "my_sqlserver_driver",
+			DSN:        connString, //"gorm:gorm@tcp(localhost:9910)/gorm?charset=utf8&parseTime=True&loc=Local", // data source name, refer https://github.com/go-sql-driver/mysql#dsn-data-source-name
+		}),&gorm.Config{
+			Logger: newLogger,
+		  })
 	}
-	if cfg.DB_TYPE == "postgres" {
+	if dbtype == "postgres" {
 		connString := fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", cfg.DB_USER, cfg.DB_PASSWORD, cfg.DB_SERVER, cfg.DB_PORT, cfg.DB_NAME) //host=%s userid=%s port=%d password=%s dbname=%s
-		fmt.Println(connString)
-		conn, dberr = gorm.Open("postgres", connString)
+		
+		conn, dberr = gorm.Open(postgres.New(postgres.Config{
+			DriverName: "my_postgres_driver",
+			DSN:        connString, //"gorm:gorm@tcp(localhost:9910)/gorm?charset=utf8&parseTime=True&loc=Local", // data source name, refer https://github.com/go-sql-driver/mysql#dsn-data-source-name
+		}), &gorm.Config{
+			Logger: newLogger,
+		  })
 	}
 
 	if cfg.DB_TYPE == "oracle" {
@@ -143,10 +178,10 @@ func SetupDB(config map[string]interface{}, entites []interface{}, dbtype string
 
 	DataStoreObject = &DataStore{}
 	DataStoreObject.StoreType = "rdbms"
-	conn.LogMode(true)
-	DB.LogMode(true)
+	//conn.LogMode(true)
+	//DB.LogMode(true)
 	DB = *conn
-	DataStoreObject.RDBMS = RDBMSImpl{conn}
+	DataStoreObject.RDBMS = RDBMSImpl{conn, ctx}
 
 	DataStoreObject.InitSchema(entites)
 	//PanicIf(dberr)
@@ -165,6 +200,16 @@ func SetupDBReturn(config map[string]interface{}, entites []interface{}, dbtype 
 	cfg.DB_NAME = config["dbname"].(string)
 	cfg.DB_PASSWORD = config["password"].(string)
 	cfg.DB_PORT = int64(config["port"].(float64))
+	ctx := context.Background()
+	newLogger = logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+		  SlowThreshold:              time.Second,   // Slow SQL threshold
+		  LogLevel:                   logger.Silent, // Log level
+		  IgnoreRecordNotFoundError: true,           // Ignore ErrRecordNotFound error for logger
+		  Colorful:                  false,          // Disable color
+		},
+	  )
 	/*settings := "user=" + cfg.DB_USER + " password=" + cfg.DB_PASSWORD + " dbname=" + cfg.DB_NAME + " sslmode=disable"
 	db, err := sql.Open("postgres", settings)
 
@@ -177,20 +222,24 @@ func SetupDBReturn(config map[string]interface{}, entites []interface{}, dbtype 
 	log.Printf("DB has been pinged")*/
 	connString := fmt.Sprintf("host=%s user=%s port=%d password=%s dbname=%s sslmode=disable", cfg.DB_SERVER, cfg.DB_USER, cfg.DB_PORT, cfg.DB_PASSWORD, cfg.DB_NAME)
 	fmt.Println(connString)
-	db, err := gorm.Open("postgres", connString)
+	conn, dberr = gorm.Open(postgres.New(postgres.Config{
+		DriverName: "my_postgres_driver",
+		DSN:        connString, //"gorm:gorm@tcp(localhost:9910)/gorm?charset=utf8&parseTime=True&loc=Local", // data source name, refer https://github.com/go-sql-driver/mysql#dsn-data-source-name
+	}), &gorm.Config{
+		Logger: newLogger,
+	  })
 	DataStoreObject = &DataStore{}
 	DataStoreObject.StoreType = dbtype
-	db.LogMode(true)
-	DB.LogMode(true)
+	
 	DB = *db
-	DataStoreObject.RDBMS = RDBMSImpl{db}
+	DataStoreObject.RDBMS = RDBMSImpl{db, ctx}
 
 	DataStoreObject.InitSchema(entites)
-	PanicIf(err)
+	PanicIf(dberr)
 
-	if err != nil {
-		log.Fatalf("Error on opening database connection: %s", err.Error())
-		return nil, err
+	if dberr != nil {
+		log.Fatalf("Error on opening database connection: %s", dberr.Error())
+		return nil, dberr
 	}
 	log.Printf("DB has been pinged")
 	return db, nil
